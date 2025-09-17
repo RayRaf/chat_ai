@@ -135,3 +135,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # OpenAI API Key
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+
+# Available OpenAI models
+OPENAI_MODELS = [
+    {'id': 'gpt-4o', 'name': 'GPT-4o'},
+    {'id': 'gpt-4o-mini', 'name': 'GPT-4o Mini'},
+    {'id': 'o1-preview', 'name': 'o1 Preview'},
+    {'id': 'o1-mini', 'name': 'o1 Mini'},
+    {'id': 'gpt-4-turbo', 'name': 'GPT-4 Turbo'},
+    {'id': 'gpt-4', 'name': 'GPT-4'},
+]

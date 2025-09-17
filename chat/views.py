@@ -11,7 +11,9 @@ client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
 def index(request):
     chats = Chat.objects.all().order_by('-updated_at')
-    return render(request, 'chat/index.html', {'chats': chats})
+    from django.conf import settings
+    models = settings.OPENAI_MODELS
+    return render(request, 'chat/index.html', {'chats': chats, 'models': models})
 
 @csrf_exempt
 @require_POST
@@ -26,7 +28,7 @@ def send_message(request):
     chat_id = data['chat_id']
     content = data['content']
     provider = data.get('provider', 'openai')
-    model = data.get('model', 'gpt-3.5-turbo')
+    model = data.get('model', 'gpt-4o')
 
     chat = get_object_or_404(Chat, id=chat_id)
 
@@ -69,7 +71,7 @@ def send_message(request):
     if chat.messages.count() == 2:  # user + ai
         try:
             title_response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
+                model="gpt-4o",
                 messages=[{"role": "user", "content": f"Generate a short title for this conversation in the same language as the first message: {content[:100]}"}]
             )
             chat.title = title_response.choices[0].message.content.strip()

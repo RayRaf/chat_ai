@@ -14,7 +14,7 @@ class Message(models.Model):
     is_user = models.BooleanField(default=True)  # True for user, False for AI
     created_at = models.DateTimeField(auto_now_add=True)
     provider = models.CharField(max_length=50, default='openai')
-    model = models.CharField(max_length=50, default='gpt-3.5-turbo')
+    model = models.CharField(max_length=50, default='gpt-4o')
 
     def __str__(self):
         return f"{'User' if self.is_user else 'AI'}: {self.content[:50]}"
