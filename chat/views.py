@@ -97,3 +97,10 @@ def update_chat_title(request, chat_id):
     chat.title = data['title']
     chat.save()
     return JsonResponse({'success': True})
+
+@csrf_exempt
+@require_POST
+def delete_chat(request, chat_id):
+    chat = get_object_or_404(Chat, id=chat_id)
+    chat.delete()
+    return JsonResponse({'success': True})

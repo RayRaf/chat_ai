@@ -14,7 +14,8 @@
         .ai-message { text-align: left; }
         .message-content { display: inline-block; max-width: 70%; padding: 8px 12px; border-radius: 10px; }
         .user-message .message-content { background-color: #007bff; color: white; }
-        .ai-message .message-content { background-color: #f8f9fa; }
+        .delete-chat-btn { font-size: 18px; line-height: 1; padding: 2px 6px; opacity: 0; transition: opacity 0.2s; }
+        .chat-item:hover .delete-chat-btn { opacity: 1; }
     </style>
 </head>
 <body>
@@ -25,9 +26,12 @@
                 <button id="new-chat-btn" class="btn btn-primary mb-3">New Chat</button>
                 <div id="chat-list" class="chat-list">
                     {% for chat in chats %}
-                    <div class="chat-item p-2 border-bottom" data-chat-id="{{ chat.id }}">
-                        <div class="chat-title">{{ chat.title }}</div>
-                        <small class="text-muted">{{ chat.updated_at|date:"M d, H:i" }}</small>
+                    <div class="chat-item p-2 border-bottom d-flex justify-content-between align-items-center" data-chat-id="{{ chat.id }}">
+                        <div class="flex-grow-1">
+                            <div class="chat-title">{{ chat.title }}</div>
+                            <small class="text-muted">{{ chat.updated_at|date:"M d, H:i" }}</small>
+                        </div>
+                        <button class="btn btn-sm btn-outline-danger delete-chat-btn" data-chat-id="{{ chat.id }}">×</button>
                     </div>
                     {% endfor %}
                 </div>
@@ -70,10 +74,14 @@
         });
 
         document.getElementById('chat-list').addEventListener('click', function(e) {
-            if (e.target.closest('.chat-item')) {
+            if (e.target.closest('.chat-item') && !e.target.classList.contains('delete-chat-btn')) {
                 const chatItem = e.target.closest('.chat-item');
                 currentChatId = chatItem.dataset.chatId;
                 loadChat(currentChatId);
+            } else if (e.target.classList.contains('delete-chat-btn')) {
+                e.stopPropagation();
+                const chatId = e.target.dataset.chatId;
+                deleteChat(chatId);
             }
         });
 
@@ -93,9 +101,15 @@
         function addChatToList(chatId, title) {
             const chatList = document.getElementById('chat-list');
             const chatItem = document.createElement('div');
-            chatItem.className = 'chat-item p-2 border-bottom';
+            chatItem.className = 'chat-item p-2 border-bottom d-flex justify-content-between align-items-center';
             chatItem.dataset.chatId = chatId;
-            chatItem.innerHTML = `<div class="chat-title">${title}</div><small class="text-muted">Just now</small>`;
+            chatItem.innerHTML = `
+                <div class="flex-grow-1">
+                    <div class="chat-title">${title}</div>
+                    <small class="text-muted">Just now</small>
+                </div>
+                <button class="btn btn-sm btn-outline-danger delete-chat-btn" data-chat-id="${chatId}">×</button>
+            `;
             chatList.insertBefore(chatItem, chatList.firstChild);
         }
 
@@ -175,6 +189,34 @@
             chatItems.forEach(item => {
                 if (item.dataset.chatId == chatId) {
                     item.querySelector('.chat-title').textContent = title;
+                }
+            });
+        }
+
+        function deleteChat(chatId) {
+            if (confirm('Are you sure you want to delete this chat?')) {
+                fetch(`/chat/${chatId}/delete/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        removeChatFromList(chatId);
+                        if (currentChatId == chatId) {
+                            document.getElementById('chat-area').style.display = 'none';
+                            currentChatId = null;
+                        }
+                    }
+                });
+            }
+        }
+
+        function removeChatFromList(chatId) {
+            const chatItems = document.querySelectorAll('.chat-item');
+            chatItems.forEach(item => {
+                if (item.dataset.chatId == chatId) {
+                    item.remove();
                 }
             });
         }
