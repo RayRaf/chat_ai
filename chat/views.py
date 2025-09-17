@@ -39,11 +39,18 @@ def send_message(request):
         model=model
     )
 
-    # Get AI response
+    # Get AI response with full context
     try:
+        # Get all messages in the chat, ordered by creation time
+        all_messages = chat.messages.all().order_by('created_at')
+        messages_for_api = []
+        for msg in all_messages:
+            role = "user" if msg.is_user else "assistant"
+            messages_for_api.append({"role": role, "content": msg.content})
+        
         response = client.chat.completions.create(
             model=model,
-            messages=[{"role": "user", "content": content}]
+            messages=messages_for_api
         )
         ai_content = response.choices[0].message.content
     except Exception as e:
