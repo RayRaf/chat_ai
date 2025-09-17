@@ -70,7 +70,7 @@ def send_message(request):
         try:
             title_response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
-                messages=[{"role": "user", "content": f"Generate a short title for this conversation: {content[:100]}"}]
+                messages=[{"role": "user", "content": f"Generate a short title for this conversation in the same language as the first message: {content[:100]}"}]
             )
             chat.title = title_response.choices[0].message.content.strip()
             chat.save()
