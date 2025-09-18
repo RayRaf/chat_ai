@@ -1,3 +1,4 @@
 Django==5.2.6
 python-dotenv==1.1.1
 openai==1.107.3
+mistralai==1.9.10

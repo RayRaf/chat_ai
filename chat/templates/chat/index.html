@@ -52,12 +52,12 @@
                         <div>
                             <button id="edit-title-btn" class="btn btn-sm btn-outline-secondary">Edit Title</button>
                             <select id="provider-select" class="form-select form-select-sm d-inline-block w-auto ms-2">
-                                <option value="openai">OpenAI</option>
+                                {% for provider_key, provider_data in available_providers.items %}
+                                <option value="{{ provider_key }}" {% if provider_key == default_provider %}selected{% endif %}>{{ provider_data.name }}</option>
+                                {% endfor %}
                             </select>
                             <select id="model-select" class="form-select form-select-sm d-inline-block w-auto ms-2">
-                                {% for model in models %}
-                                <option value="{{ model.id }}">{{ model.name }}</option>
-                                {% endfor %}
+                                <!-- Модели будут загружены через JavaScript -->
                             </select>
                         </div>
                     </div>
@@ -77,11 +77,28 @@
     <script>
         let currentChatId = null;
 
+        // Данные о провайдерах и их моделях
+        const availableProviders = {{ available_providers_json|safe }};
+
+        // Статус моделей (можно обновлять динамически)
+        const modelStatus = {
+            'mistral-small': '🟢 Доступен',
+            'mistral-medium': '🟡 Ограничен',
+            'mistral-large-latest': '🟡 Ограничен',
+            'gpt-4o': '🟢 Доступен',
+            'gpt-4o-mini': '🟢 Доступен'
+        };
+
         document.getElementById('new-chat-btn').addEventListener('click', createNewChat);
         document.getElementById('send-btn').addEventListener('click', sendMessage);
         document.getElementById('edit-title-btn').addEventListener('click', editTitle);
         document.getElementById('message-input').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') sendMessage();
+        });
+
+        // Обработчик изменения провайдера
+        document.getElementById('provider-select').addEventListener('change', function() {
+            updateModelSelect(this.value);
         });
 
         document.getElementById('chat-list').addEventListener('click', function(e) {
@@ -284,6 +301,34 @@
                 }
             });
         }
+
+        function updateModelSelect(providerKey) {
+            const modelSelect = document.getElementById('model-select');
+            const provider = availableProviders[providerKey];
+
+            if (provider && provider.models) {
+                modelSelect.innerHTML = '';
+                provider.models.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model.id;
+                    option.textContent = model.name;
+
+                    // Добавляем статус если доступен
+                    const status = modelStatus[model.id];
+                    if (status) {
+                        option.textContent += ` ${status}`;
+                    }
+
+                    modelSelect.appendChild(option);
+                });
+            }
+        }
+
+        // Инициализация модели для текущего провайдера
+        document.addEventListener('DOMContentLoaded', function() {
+            const providerSelect = document.getElementById('provider-select');
+            updateModelSelect(providerSelect.value);
+        });
     </script>
 </body>
 </html>

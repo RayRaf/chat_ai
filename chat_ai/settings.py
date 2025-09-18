@@ -136,6 +136,15 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # OpenAI API Key
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
+# Anthropic API Key (для Claude)
+ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY')
+
+# Google API Key (для Gemini)
+GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
+
+# Mistral API Key
+MISTRAL_API_KEY = os.getenv('MISTRAL_API_KEY')
+
 # Available OpenAI models
 OPENAI_MODELS = [
     {'id': 'gpt-4o', 'name': 'GPT-4o'},
@@ -144,4 +153,26 @@ OPENAI_MODELS = [
     {'id': 'o1-mini', 'name': 'o1 Mini'},
     {'id': 'gpt-4-turbo', 'name': 'GPT-4 Turbo'},
     {'id': 'gpt-4', 'name': 'GPT-4'},
+]
+
+# Available Anthropic models
+ANTHROPIC_MODELS = [
+    {'id': 'claude-3-opus-20240229', 'name': 'Claude 3 Opus'},
+    {'id': 'claude-3-sonnet-20240229', 'name': 'Claude 3 Sonnet'},
+    {'id': 'claude-3-haiku-20240307', 'name': 'Claude 3 Haiku'},
+]
+
+# Available Google models
+GOOGLE_MODELS = [
+    {'id': 'gemini-pro', 'name': 'Gemini Pro'},
+    {'id': 'gemini-pro-vision', 'name': 'Gemini Pro Vision'},
+]
+
+# Available Mistral models
+MISTRAL_MODELS = [
+    {'id': 'mistral-small', 'name': 'Mistral Small (Доступен)'},
+    {'id': 'mistral-medium', 'name': 'Mistral Medium (Ограничен)'},
+    {'id': 'mistral-large-latest', 'name': 'Mistral Large (Ограничен)'},
+    {'id': 'mistral-small-latest', 'name': 'Mistral Small Latest'},
+    {'id': 'open-mistral-7b', 'name': 'Open Mistral 7B'},
 ]
