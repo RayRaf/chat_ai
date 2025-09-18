@@ -38,7 +38,15 @@ class ChatService:
 
         # Получить провайдера и ответ
         provider_instance = get_provider(provider)
-        ai_content = provider_instance.get_response(messages_for_api, model)
+        # Validate model availability if provider supports listing
+        try:
+            available_models = provider_instance.get_available_models()
+            if model not in available_models:
+                ai_content = f"Error: Model '{model}' is not available. Choose another model."
+            else:
+                ai_content = provider_instance.get_response(messages_for_api, model)
+        except Exception as e:
+            ai_content = f"Error retrieving provider response: {e}"
 
         # Сохранить ответ AI
         ai_message = Message.objects.create(

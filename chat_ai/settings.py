@@ -157,6 +157,13 @@ OPENAI_MODELS = [
     {'id': 'o1-mini', 'name': 'o1 Mini'},
     {'id': 'gpt-4-turbo', 'name': 'GPT-4 Turbo'},
     {'id': 'gpt-4', 'name': 'GPT-4'},
+    # Newer/recent models (will be marked unavailable if API does not expose them)
+    {'id': 'gpt-4.1', 'name': 'GPT-4.1'},
+    {'id': 'gpt-4.1-mini', 'name': 'GPT-4.1 Mini'},
+    {'id': 'o1', 'name': 'o1'},
+    {'id': 'o1-mini', 'name': 'o1 Mini (Stable)'},
+    # Placeholder for future model – will be disabled if not present in live API
+    {'id': 'gpt-5', 'name': 'GPT-5 (Placeholder)'},
 ]
 
 # Available Anthropic models

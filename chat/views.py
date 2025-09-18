@@ -43,6 +43,36 @@ def index(request):
         }
     }
 
+    # Try to fetch live OpenAI models from the provider and show them in UI.
+    try:
+        from .providers import get_provider
+        openai_provider = get_provider('openai')
+        live_model_ids = set(openai_provider.get_available_models())
+
+        # Build model objects from live models. Provide friendly names where possible.
+        live_models = []
+        for mid in sorted(live_model_ids):
+            # Use the id as a fallback name; you can map nicer names here if desired
+            name = mid
+            # Some heuristics for prettier names
+            if mid.startswith('gpt-'):
+                name = mid.replace('-', ' ').upper()
+            live_models.append({'id': mid, 'name': name, 'available': True})
+
+        # If we got at least one live model, use the live list in the UI.
+        if live_models:
+            available_providers['openai']['models'] = live_models
+        else:
+            # Fallback to configured models and mark availability based on the live ids set
+            for m in available_providers['openai']['models']:
+                m_id = m.get('id')
+                m['available'] = m_id in live_model_ids
+    except Exception:
+        # If fetching live models fails, fallback to settings list but mark a small stable set as available
+        stable = {'gpt-4o', 'gpt-4'}
+        for m in available_providers['openai']['models']:
+            m['available'] = m.get('id') in stable
+
     return render(request, 'chat/index.html', {
         'chats': chats,
         'available_providers': available_providers,
