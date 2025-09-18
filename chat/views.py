@@ -43,6 +43,21 @@ def index(request):
         }
     }
 
+    # Collect models used in existing chats (for this user) so they always appear in UI
+    used_model_ids = set()
+    try:
+        # Collect from messages for current user's chats
+        if request.user.is_authenticated:
+            used_model_ids = set(
+                Message.objects.filter(chat__user=request.user)
+                .exclude(model__isnull=True)
+                .exclude(model__exact='')
+                .values_list('model', flat=True)
+            )
+
+    except Exception:
+        used_model_ids = set()
+
     # Try to fetch live OpenAI models from the provider and show them in UI.
     try:
         from .providers import get_provider
@@ -59,9 +74,19 @@ def index(request):
                 name = mid.replace('-', ' ').upper()
             live_models.append({'id': mid, 'name': name, 'available': True})
 
-        # If we got at least one live model, use the live list in the UI.
-        if live_models:
-            available_providers['openai']['models'] = live_models
+        # Merge used model ids so that any model referenced in chats is present in the UI
+        merged_ids = set(live_model_ids) | set(used_model_ids)
+
+        merged_models = []
+        for mid in sorted(merged_ids):
+            name = mid
+            if mid.startswith('gpt-'):
+                name = mid.replace('-', ' ').upper()
+            # If mid in live_model_ids then available True, otherwise False (used-only)
+            merged_models.append({'id': mid, 'name': name, 'available': mid in live_model_ids})
+
+        if merged_models:
+            available_providers['openai']['models'] = merged_models
         else:
             # Fallback to configured models and mark availability based on the live ids set
             for m in available_providers['openai']['models']:
