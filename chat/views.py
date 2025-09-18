@@ -1,15 +1,27 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
+from django.contrib.auth import login, logout, authenticate
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib import messages
 import json
-from .models import Chat, Message
+from .models import Chat, Message, UserProfile
 from .services.chat_service import ChatService
 from django.conf import settings
 import json as json_module
 
 def index(request):
-    chats = Chat.objects.all().order_by('-updated_at')
+    if request.user.is_authenticated:
+        chats = Chat.objects.filter(user=request.user).order_by('-updated_at')
+        try:
+            user_profile = UserProfile.objects.get(user=request.user)
+        except UserProfile.DoesNotExist:
+            user_profile = UserProfile.objects.create(user=request.user)
+    else:
+        chats = []
+        user_profile = None
 
     # Собираем все доступные модели по провайдерам
     available_providers = {
@@ -35,18 +47,21 @@ def index(request):
         'chats': chats,
         'available_providers': available_providers,
         'available_providers_json': json_module.dumps(available_providers),
-        'default_provider': 'openai'
+        'default_provider': 'openai',
+        'user_profile': user_profile
     })
 
+@login_required
 @csrf_exempt
 @require_POST
 def create_chat(request):
     try:
-        chat = ChatService.create_chat()
+        chat = ChatService.create_chat(request.user)
         return JsonResponse({'chat_id': chat.id, 'title': chat.title})
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
+@login_required
 @csrf_exempt
 @require_POST
 def send_message(request):
@@ -57,33 +72,93 @@ def send_message(request):
     model = data.get('model', 'gpt-4o')
 
     try:
-        result = ChatService.send_message(chat_id, content, provider, model)
+        result = ChatService.send_message(chat_id, content, provider, model, request.user)
         return JsonResponse(result)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
+@login_required
 def get_messages(request, chat_id):
     try:
-        result = ChatService.get_messages(chat_id)
+        result = ChatService.get_messages(chat_id, request.user)
         return JsonResponse(result)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
+@login_required
 @csrf_exempt
 @require_POST
 def update_chat_title(request, chat_id):
     try:
         data = json.loads(request.body)
-        ChatService.update_chat_title(chat_id, data['title'])
+        ChatService.update_chat_title(chat_id, data['title'], request.user)
         return JsonResponse({'success': True})
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
+@login_required
 @csrf_exempt
 @require_POST
 def delete_chat(request, chat_id):
     try:
-        ChatService.delete_chat(chat_id)
+        ChatService.delete_chat(chat_id, request.user)
         return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+def register_view(request):
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            UserProfile.objects.create(user=user)
+            login(request, user)
+            return JsonResponse({'success': True})
+        else:
+            return JsonResponse({'errors': form.errors}, status=400)
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+def login_view(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            return JsonResponse({'success': True})
+        else:
+            return JsonResponse({'error': 'Invalid credentials'}, status=400)
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+@login_required
+def logout_view(request):
+    logout(request)
+    return redirect('index')
+
+@login_required
+def user_profile_view(request):
+    try:
+        user_profile = UserProfile.objects.get(user=request.user)
+    except UserProfile.DoesNotExist:
+        user_profile = UserProfile.objects.create(user=request.user)
+    return JsonResponse({
+        'username': request.user.username,
+        'balance': str(user_profile.balance)
+    })
+
+@login_required
+@require_POST
+def top_up_balance(request):
+    try:
+        amount = float(request.POST.get('amount', 0))
+        if amount <= 0:
+            return JsonResponse({'error': 'Invalid amount'}, status=400)
+        
+        user_profile, created = UserProfile.objects.get_or_create(user=request.user)
+        user_profile.balance += amount
+        user_profile.save()
+        return JsonResponse({'success': True, 'new_balance': str(user_profile.balance)})
+    except ValueError:
+        return JsonResponse({'error': 'Invalid amount'}, status=400)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)

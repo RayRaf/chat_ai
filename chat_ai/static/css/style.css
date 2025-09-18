@@ -602,3 +602,30 @@ h4 {
 .empty-state small {
     color: var(--text-muted);
 }
+
+/* User Info Styles */
+.user-info {
+    padding: 15px;
+    border-top: 1px solid var(--border-color);
+    background-color: var(--bg-secondary);
+}
+
+.user-profile-link {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    background-color: var(--bg-tertiary);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    color: var(--text-primary);
+}
+
+.user-profile-link:hover {
+    background-color: var(--hover-bg);
+}
+
+.user-profile-link .icon {
+    margin-right: 10px;
+    font-size: 18px;
+}

@@ -7,15 +7,19 @@ class ChatService:
     """Сервис для управления чатами и сообщениями"""
 
     @staticmethod
-    def create_chat() -> Chat:
+    def create_chat(user) -> Chat:
         """Создать новый чат"""
-        return Chat.objects.create()
+        return Chat.objects.create(user=user)
 
     @staticmethod
-    def send_message(chat_id: int, content: str, provider: str = 'openai', model: str = 'gpt-4o') -> Dict[str, Any]:
+    def send_message(chat_id: int, content: str, provider: str = 'openai', model: str = 'gpt-4o', user=None) -> Dict[str, Any]:
         """Отправить сообщение и получить ответ от AI"""
         chat = Chat.objects.get(id=chat_id)
-
+        
+        # Проверить, что чат принадлежит пользователю
+        if user and chat.user != user:
+            raise PermissionError("You don't have permission to access this chat")
+        
         # Сохранить сообщение пользователя
         user_message = Message.objects.create(
             chat=chat,
@@ -77,9 +81,14 @@ class ChatService:
             pass  # Если не удалось сгенерировать, оставляем пустым
 
     @staticmethod
-    def get_messages(chat_id: int) -> Dict[str, Any]:
+    def get_messages(chat_id: int, user=None) -> Dict[str, Any]:
         """Получить все сообщения чата"""
         chat = Chat.objects.get(id=chat_id)
+        
+        # Проверить, что чат принадлежит пользователю
+        if user and chat.user != user:
+            raise PermissionError("You don't have permission to access this chat")
+        
         messages = chat.messages.all().order_by('created_at')
         data = [{
             'id': msg.id,
@@ -92,14 +101,24 @@ class ChatService:
         return {'messages': data, 'title': chat.title}
 
     @staticmethod
-    def update_chat_title(chat_id: int, title: str):
+    def update_chat_title(chat_id: int, title: str, user=None):
         """Обновить заголовок чата"""
         chat = Chat.objects.get(id=chat_id)
+        
+        # Проверить, что чат принадлежит пользователю
+        if user and chat.user != user:
+            raise PermissionError("You don't have permission to access this chat")
+        
         chat.title = title
         chat.save()
 
     @staticmethod
-    def delete_chat(chat_id: int):
+    def delete_chat(chat_id: int, user=None):
         """Удалить чат"""
         chat = Chat.objects.get(id=chat_id)
+        
+        # Проверить, что чат принадлежит пользователю
+        if user and chat.user != user:
+            raise PermissionError("You don't have permission to access this chat")
+        
         chat.delete()
